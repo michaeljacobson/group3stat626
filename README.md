@@ -22,7 +22,11 @@ Git / GitHub allows for good versioning and change tracking even if we only work
 
 # Loading Project & Data
 
-To load the project, simply double click on *group3stat626.Rproj*.
+Start by creating a "New Project" in RStudio. (File > New Project). Select "Version
+Control", then "Git", and then copy/paste the GitHub URL. You will need a GitHub
+username and password, and that's good to have even after this cource is complete.
+
+Once you create the project, load the Rproject by double clicking on *group3stat626.Rproj*.
 
 Nina's complete dataset is already saved within the project. All columns are
 formatted to the correct data types. You can load the data simply by executing 
@@ -31,6 +35,10 @@ the following line in R:
 ```
 data(dta)
 ```
+
+From there you can create new R functions (saving them in the R directory), or
+creating new pipelines or markdown documents that we'll eventually integrate into
+reports and / or presentations.
 
 
 
