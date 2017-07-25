@@ -1,0 +1,75 @@
+---
+title: "Discussion Regarding ACF Problem"
+output: html_document
+---
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+data(dta)
+
+# Greg's Approach
+acf(
+  dta$spi3
+) %>% str
+
+# Brian's Approach - Slightly Modified
+acf(
+  ts(dta$spi3,
+     start = c(1955,1),
+     end = c(2014,12)),
+  lag.max = 28
+) %>% str
+
+# Brian's Approach Modified
+acf(
+  ts(dta$spi3,
+     start = c(1955,1),
+     end = c(2014,12),
+     freq = 12)
+) %>% str
+```
+
+We see that when we modified the second approach to define the frequency, or
+number of observations per unit of time (i.e., the first element of the start
+and end vectors), the approaches are identical. At issue is how the \textbf{ts} function works in conjunction with the \textbf{acf} function in R. Most specifically, when you pass an object to the \textbf{ts} function with start and
+end times but no frequency (and really in any case for that matter), the function
+truncates the number of observations in the series by the following code from the \textbf{ts} function:
+
+```{r, eval = FALSE}
+if (length(start) > 1L) {
+    start <- start[1L] + (start[2L] - 1)/frequency
+}
+if (length(end) > 1L) {
+    end <- end[1L] + (end[2L] - 1)/frequency
+}
+if (missing(end)) 
+    end <- start + (ndata - 1)/frequency
+else if (missing(start)) 
+    start <- end - (ndata - 1)/frequency
+if (start > end) 
+    stop("'start' cannot be after 'end'")
+nobs <- floor((end - start) * frequency + 1.01)
+if (nobs != ndata) 
+    data <- if (NCOL(data) == 1) {
+        if (ndata < nobs) 
+            rep_len(data, nobs)
+        else if (ndata > nobs) 
+            data[1L:nobs]
+    }
+    else {
+        if (ndata < nobs) 
+            data[rep_len(1L:ndata, nobs), ]
+        else if (ndata > nobs) 
+            data[1L:nobs, ]
+    }
+```
+
+As a result, we end up with a series of length 71 from 1955 to 2025 after R
+has coerced a redefintion of the start and end timeframes and number of observations.
+
+All that being said, and because we most certainly do not want to truncate the series as such, the first or modified \textbf{ts} option appear to be correct.
+
+
+
+
+
