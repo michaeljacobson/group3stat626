@@ -1,0 +1,81 @@
+---
+output: pdf_document
+---
+
+```{r, echo = F, warning = F, message = F}
+library(tidyverse)
+library(astsa)
+data(dta)
+len <- dim(dta)[1]
+x <- ts(dta$spi3,
+     start = c(1955,1),
+     end = c(2014,12),
+     freq = 12)
+x_train <- x[1:(len*0.975)]
+x_test <- x[(len*0.975):720]
+```
+
+## ARMA-GARCH Models
+Earlier we noted that while the first difference of the SPI series stabilized the mean, there was still evidence of heteroskedasticity, especially early in the series. In an aim to combat this, we consider a different class of models that do not assume constant variance: autoregressive conditionally heteroskedastic (ARCH) models and the generalized case (GARCH).
+
+```{r, echo = F}
+y <- ts(diff(x_train),
+     start = c(1955,1),
+     freq = 12)
+#plot(y, type = "l", main = "First Difference of SPI", ylab = "")
+```
+
+We reconsider the ACF and PACF plots of $y_t = x_t - x_{t-1}$ and $y_t^2$ concurrently. Certainly there is some evidence to suggest a seasonal component in the PACF of the former [as we have already discussed], but for the sake of this exercise, we will focus on the lag 3 spike in the ACF.
+
+```{r, echo = FALSE}
+out <- astsa::acf2(y)
+```
+
+```{r, echo = FALSE}
+out <- astsa::acf2(y^2)
+```
+
+We observe significant correlation at lag 3 in both the ACF and PACF plots of series $y_t^2$ which supports the consideration of a GARCH(1,1) and potentially an ARCH(1) against the MA(3). We will use the \textbf{fGarch} package to fit an MA(3)-GARCH(1,1) and MA(3)-ARCH(1) to $y_t$.
+
+```{r, echo = F}
+x.g1 <- fGarch::garchFit(~ arma(0,3) + garch(1,1), data = y, trace = F, include.mean = F)
+x.g2 <- fGarch::garchFit(~ arma(0,3) + garch(1,0), data = y, trace = F, include.mean = F)
+```
+
+### Model Diagnostics MA(3)-GARCH(1,1)
+```{r, echo = F}
+fGarch::summary(x.g1)
+```
+
+### Model Diagnostics MA(3)-ARCH(1)
+```{r, echo = F}
+fGarch::summary(x.g2)
+```
+
+```{r, echo = F}
+par(mfrow = c(2,2), mar = c(2,2,2,2))
+fGarch::residuals(x.g1) %>% plot(., type = "l", main = "Resid MA(3)-GARCH(1,1)", xlab = "")
+fGarch::residuals(x.g2) %>% plot(., type = "l", main = "Resid MA(3)-ARCH(1)", xlab = "")
+acf(fGarch::residuals(x.g1), main = "")
+acf(fGarch::residuals(x.g2), main = "")
+```
+
+When we review the fit diagnostics of the GARCH models, both sets of residuals resemble a white noise process with some sparse points of volatility early in the series. The ACF plots both look good. Goodness of fit tests offer evidence that the residuals are not normally distributed, but this is not surprising to us. That being said, we may need to see how this impacts our ability to make predictions. The p-values for the Ljung-Box-Pierce statistic for both models are not signficant.
+
+```{r, echo = FALSE}
+knitr::kable(data.frame(
+  Model = c("MA(3)-GARCH(1,1)", "MA(3)-ARCH(1)", "MA(3)"),
+  AIC = c( 1.924, 1.928, 0.074),
+  BIC = c(1.963, 1.960, -0.900)
+))
+```
+
+Between the two GARCH models, AIC and BIC selection criteria are split with BIC selecting the ARCH(1) model. However, when we consider the base MA(3) on $y_t$ (effectively an IMA(1,3) on $x_t$), both selection criteria select it over the GARCH models. Certainly we could dive down the rabbit hole and try forecasting a GARCH approach, but simpler models fit SPI better.
+
+```{r, echo = FALSE}
+knitr::kable(data.frame(
+  Model = c("MA(3)-GARCH(1,1)", "MA(3)-ARCH(1)", "MA(3)"),
+  AIC = c( 1.924, 1.928, 0.074),
+  BIC = c(1.963, 1.960, -0.900)
+))
+```
