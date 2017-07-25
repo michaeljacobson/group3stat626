@@ -19,9 +19,7 @@ x_test <- x[(len*0.975):720]
 Earlier we noted that while the first difference of the SPI series stabilized the mean, there was still evidence of heteroskedasticity, especially early in the series. In an aim to combat this, we consider a different class of models that do not assume constant variance: autoregressive conditionally heteroskedastic (ARCH) models and the generalized case (GARCH).
 
 ```{r, echo = F}
-y <- ts(diff(x_train),
-     start = c(1955,1),
-     freq = 12)
+y <- diff(x_train)
 #plot(y, type = "l", main = "First Difference of SPI", ylab = "")
 ```
 
